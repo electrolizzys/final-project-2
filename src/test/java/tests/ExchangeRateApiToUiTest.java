@@ -1,11 +1,12 @@
 package tests;
 
 import api.models.CommercialRate;
+import constants.TestDataConstants;
 import pages.ExchangeRatePage;
 import steps.CommercialRatesApiSteps;
 import steps.ExchangeRateSteps;
+import utils.TestDataProviders;
 import org.testng.Assert;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
@@ -15,15 +16,7 @@ import org.testng.annotations.Test;
  */
 public class ExchangeRateApiToUiTest extends BaseTest {
 
-    // rates are shown with trailing zeros trimmed (API 3.530 -> UI "3.53"), so compare numerically
-    private static final double RATE_TOLERANCE = 0.00001;
-
-    @DataProvider(name = "popularCurrencies")
-    public Object[][] popularCurrencies() {
-        return new Object[][]{{"USD"}, {"EUR"}, {"GBP"}};
-    }
-
-    @Test(dataProvider = "popularCurrencies",
+    @Test(dataProvider = TestDataProviders.POPULAR_CURRENCIES, dataProviderClass = TestDataProviders.class,
             description = "KAN-T24 | Verify the exchange rates page shows the same rates as the commercial rates API")
     public void rateCardMatchesCommercialRatesApi(String currencyCode) {
         CommercialRate expected = new CommercialRatesApiSteps().getCommercialRate(currencyCode);
@@ -32,11 +25,11 @@ public class ExchangeRateApiToUiTest extends BaseTest {
 
         Assert.assertEquals(exchangeRates.getRateCardTitle(currencyCode), "1 " + expected.getName(),
                 currencyCode + " card title should match the API currency name");
-        Assert.assertEquals(exchangeRates.getRateCardBuyRate(currencyCode), expected.getBuyRate(), RATE_TOLERANCE,
+        Assert.assertEquals(exchangeRates.getRateCardBuyRate(currencyCode), expected.getBuyRate(), TestDataConstants.RATE_TOLERANCE,
                 currencyCode + " buy rate should match the API");
-        Assert.assertEquals(exchangeRates.getRateCardSellRate(currencyCode), expected.getSellRate(), RATE_TOLERANCE,
+        Assert.assertEquals(exchangeRates.getRateCardSellRate(currencyCode), expected.getSellRate(), TestDataConstants.RATE_TOLERANCE,
                 currencyCode + " sell rate should match the API");
-        Assert.assertEquals(exchangeRates.getRateCardOfficialRate(currencyCode), expected.getOfficialCourse(), RATE_TOLERANCE,
+        Assert.assertEquals(exchangeRates.getRateCardOfficialRate(currencyCode), expected.getOfficialCourse(), TestDataConstants.RATE_TOLERANCE,
                 currencyCode + " official rate should match the API");
     }
 }

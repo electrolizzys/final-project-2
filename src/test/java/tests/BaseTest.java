@@ -6,7 +6,9 @@ import com.microsoft.playwright.assertions.LocatorAssertions;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import utils.ConfigReader;
 import utils.PlaywrightFactory;
+import database.MyBatisSessionFactory;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeMethod;
 
 /**
@@ -25,6 +27,15 @@ public abstract class BaseTest {
     @AfterMethod(alwaysRun = true)
     public void tearDown() {
         PlaywrightFactory.closePage();
+    }
+
+    /**
+     * Releases the MyBatis connection pool (and with it the H2 database) once
+     * the whole suite is done; a no-op when no DB-driven test ran.
+     */
+    @AfterSuite(alwaysRun = true)
+    public void closeDatabase() {
+        MyBatisSessionFactory.shutdown();
     }
 
     /**

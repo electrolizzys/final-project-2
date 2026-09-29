@@ -55,8 +55,8 @@ src/main/java/
   steps/        business actions and flows
   api/          clients/ (Rest Assured calls), models/ (JSON POJOs)
   database/     mappers/ (MyBatis), models/ (row POJOs), DB bootstrap
-  utils/        ConfigReader, PlaywrightFactory
-  constants/    UrlConstants
+  utils/        ConfigReader, PlaywrightFactory, TestDataProviders
+  constants/    UrlConstants, TestDataConstants
 src/test/java/tests/   test classes + BaseTest
 resources/             config.properties, mybatis/, testdata/
 ```
@@ -65,8 +65,8 @@ resources/             config.properties, mybatis/, testdata/
 - **`components/`**: `HeaderComponent` (the top navigation, present on every page), `CookieBannerComponent` ("ACCEPT ALL") and `LanguageSwitcherComponent` (the header's ქარ/EN toggle). Each one owns its own selectors and behaviour, and `BasePage` creates all three, so every page object gets them without repeating a selector.
 - **`steps/`**: the business layer that tests call to *do* things. UI examples are `LocationsSteps.selectCity(...)` and `BusinessLocalizationSteps.openHomepageAndSwitchLanguage(startUrl, locale)`. API examples are `ExchangeRateApiSteps`, which checks the 200 status and deserializes the response, and `ExchangeRateValidationSteps`, which does the same for the 400 case. `LocationSearchNetworkSteps` captures browser traffic. Tests call steps for actions and read page objects or returned POJOs for assertions.
 - **`api/`**: `clients/ExchangeRateApiClient` builds the Rest Assured requests (base URI from config). `models/` holds the POJOs the JSON is deserialized into. They are annotated `@JsonIgnoreProperties(ignoreUnknown = true)`, because the API returns fields we don't use and a new field shouldn't break the tests.
-- **`database/`**: `DatabaseInitializer` builds the H2 database from the SQL scripts over plain JDBC. `MyBatisSessionFactory` creates MyBatis sessions. `mappers/CurrencyConversionMapper` (and its XML) holds the query, and `models/CurrencyConversionRecord` is the row object.
-- **`tests/`**: `BaseTest` opens a fresh browser before and closes it after every test method, and provides `assertVisible(...)` with the configured timeout. Test classes contain only the scenario flow and the assertions.
+- **`database/`**: `DatabaseInitializer` builds the H2 database from the SQL scripts over plain JDBC. `MyBatisSessionFactory` builds the MyBatis factory on first use and closes its connection pool at suite end (`BaseTest`'s `@AfterSuite`). `CurrencyConversionRepository` opens a session per query and closes it before returning. `mappers/CurrencyConversionMapper` (and its XML) holds the query, and `models/CurrencyConversionRecord` is the row object.
+- **`tests/`**: `BaseTest` opens a fresh browser before and closes it after every test method, and provides `assertVisible(...)` with the configured timeout. Test classes contain only `@Test` methods: data providers live in `utils/TestDataProviders` (referenced with `dataProviderClass`) and fixed inputs/tolerances in `constants/TestDataConstants`.
 
 **Why components are separate from page objects.** The header and the cookie banner appear on every page. If each page object had its own copy of their selectors, one change on the site would mean editing every page. Keeping them in one class means a fix happens in one place.
 
@@ -74,7 +74,7 @@ A concrete case from this project: `HeaderComponent`'s logo selector was first `
 
 ## 9.2 Localization strategy
 
-Scenario KAN-T20 (homepage → switch language with the header toggle → *For Business* → *Free Startup Plan* offer → *Startup plan* details) is **one test method** run twice by a TestNG `@DataProvider` (`BusinessPlanLocalizationTest.locales`), once per locale.
+Scenario KAN-T20 (homepage → switch language with the header toggle → *For Business* → *Free Startup Plan* offer → *Startup plan* details) is **one test method** run twice by a TestNG `@DataProvider` (`TestDataProviders.locales`), once per locale.
 
 **The language is changed through the UI, not only by URL.** Each run starts on the homepage in the *other* language (the English run starts on `/ka`, the Georgian run on `/en`) and clicks the header's language toggle. `LanguageSwitcherComponent.switchTo(locale)` then waits for the URL to carry the new prefix and for the header to re-render in that locale (no fixed wait). The test asserts the locale switched, continues the whole journey, and at the end asserts it is still in the chosen locale. This is what proves the journey keeps working after a locale change.
 
@@ -90,7 +90,7 @@ Scenario KAN-T20 (homepage → switch language with the header toggle → *For B
 
 The test asserts each one with `BasePage.headingWithText(exactText)`. Because the journey has to reach each page to check its text, this proves both that the content is translated and that the journey still works after the locale changes.
 
-**Where the data lives:** in the `locales` data provider in `BusinessPlanLocalizationTest`.
+**Where the data lives:** in the `locales` data provider in `utils/TestDataProviders`, separate from the test class.
 
 **Adding another locale** (e.g. Russian):
 1. Add a row with a start URL, the new locale code and the three expected texts.
@@ -110,7 +110,7 @@ A real finding along the way: on the English details page, some benefit lines (t
 1. **Database:** `resources/testdata/schema.sql` creates the `currency_conversions` table (`from_currency`, `to_currency`, `amount`), and `resources/testdata/data.sql` inserts the rows. `DatabaseInitializer` runs both scripts once per test run, so `data.sql` always matches what the tests use.
 2. **MyBatis:** `resources/mybatis/mybatis-config.xml` reads the connection settings from `config.properties`. `CurrencyConversionMapper.xml` holds `selectAll` and a `resultMap` that maps `from_currency` to `fromCurrency`, and so on.
 3. **Java model:** each row becomes a `database.models.CurrencyConversionRecord`.
-4. **DataProvider:** `CurrencyConversionDataDrivenTest.currencyConversions()` opens a session, calls `CurrencyConversionMapper.selectAll()`, and returns one row per record.
+4. **DataProvider:** `TestDataProviders.currencyConversions()` calls `CurrencyConversionRepository.findAll()`, which opens a `SqlSession` in try-with-resources, calls `CurrencyConversionMapper.selectAll()` and closes the session. The provider returns one row per record. When the suite ends, `MyBatisSessionFactory.shutdown()` closes the pooled connections, so no database connection outlives the run.
 5. **Test:** `conversionScalesWithAmount(record)` runs once per record. It opens `/en/valutis-kursi/{from}-to-{to}?amount={amount}`, checks the sell field contains the database amount and the converted amount is positive, then doubles the amount and checks the converted value also doubles (within 1%).
 
 **Adding a new variation** takes one line in `data.sql`:

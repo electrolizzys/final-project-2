@@ -1,45 +1,25 @@
 package tests;
 
-import constants.UrlConstants;
 import pages.BusinessPage;
 import pages.BusinessSubscriptionsPage;
 import pages.HomePage;
 import pages.StartupPlanPage;
 import steps.BusinessLocalizationSteps;
+import utils.TestDataProviders;
 import org.testng.Assert;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
  * One user journey (homepage -> switch language -> For Business -> Startup
  * Plan offer -> Startup Plan details), run for both locales with the same test
- * logic. Each run starts in the *other* locale and switches through the header's
- * language toggle, so the journey is verified to keep working after a locale
- * change; only the expected localized strings come from the data provider.
+ * logic; the rows come from TestDataProviders.locales. Each run starts in the
+ * *other* locale and switches through the header's language toggle, so the
+ * journey is verified to keep working after a locale change.
  */
 public class BusinessPlanLocalizationTest extends BaseTest {
 
-    @DataProvider(name = "locales")
-    public Object[][] locales() {
-        return new Object[][]{
-                {
-                        UrlConstants.BASE_URL + "/ka",
-                        "en",
-                        "Manage your company's finances remotely",
-                        "Startup plan",
-                        "Free internet and mobile banking"
-                },
-                {
-                        UrlConstants.BASE_URL + "/en",
-                        "ka",
-                        "მართეთ კომპანიის ფინანსები დისტანციურად",
-                        "სტარტაპ ნაკრები",
-                        "უფასო ინტერნეტ და მობაილ ბანკი"
-                }
-        };
-    }
-
-    @Test(dataProvider = "locales", description = "KAN-T20 | View the Startup Plan offer in both Georgian and English")
+    @Test(dataProvider = TestDataProviders.LOCALES, dataProviderClass = TestDataProviders.class,
+            description = "KAN-T20 | View the Startup Plan offer in both Georgian and English")
     public void startupPlanOfferIsShownInBothLocales(String startHomeUrl,
                                                       String targetLocale,
                                                       String heroHeadingText,

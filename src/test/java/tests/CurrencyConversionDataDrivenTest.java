@@ -1,16 +1,11 @@
 package tests;
 
-import database.MyBatisSessionFactory;
-import database.mappers.CurrencyConversionMapper;
 import database.models.CurrencyConversionRecord;
 import pages.ExchangeRatePage;
 import steps.CurrencyConversionSteps;
-import org.apache.ibatis.session.SqlSession;
+import utils.TestDataProviders;
 import org.testng.Assert;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import java.util.List;
 
 /**
  * Runs the same conversion check against every currency pair stored in the
@@ -19,19 +14,7 @@ import java.util.List;
  */
 public class CurrencyConversionDataDrivenTest extends BaseTest {
 
-    @DataProvider(name = "currencyConversions")
-    public Object[][] currencyConversions() {
-        try (SqlSession session = MyBatisSessionFactory.openSession()) {
-            List<CurrencyConversionRecord> records = session.getMapper(CurrencyConversionMapper.class).selectAll();
-            Object[][] data = new Object[records.size()][1];
-            for (int i = 0; i < records.size(); i++) {
-                data[i][0] = records.get(i);
-            }
-            return data;
-        }
-    }
-
-    @Test(dataProvider = "currencyConversions",
+    @Test(dataProvider = TestDataProviders.CURRENCY_CONVERSIONS, dataProviderClass = TestDataProviders.class,
             description = "KAN-T21 | Verify currency conversion math for each database-driven currency pair")
     public void conversionScalesWithAmount(CurrencyConversionRecord record) {
         CurrencyConversionSteps steps = new CurrencyConversionSteps(page);
