@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!--
+  One <test> block so every class shares the same thread pool: TestNG runs
+  separate <test> blocks one after another, which would leave most classes
+  running alone. parallel="classes" keeps each class on one thread, so a
+  class's own data-provider rows stay sequential on that thread.
+-->
+<suite name="TBC Digital - Automation Suite" parallel="classes" thread-count="4">
+    <test name="All Scenarios">
+        <classes>
+            <class name="tests.LocationsTest"/>
+            <class name="tests.LoanCalculatorTest"/>
+            <class name="tests.ExchangeRateTest"/>
+            <class name="tests.TransfersTest"/>
+            <class name="tests.BusinessPlanLocalizationTest"/>
+            <class name="tests.CurrencyConversionDataDrivenTest"/>
+            <class name="tests.ExchangeRateApiTest"/>
+            <class name="tests.ExchangeRateValidationApiTest"/>
+            <class name="tests.ExchangeRateApiToUiTest"/>
+            <class name="tests.LocationSearchNetworkTest"/>
+        </classes>
+    </test>
+</suite>

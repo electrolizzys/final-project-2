@@ -3,6 +3,12 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Local H2 database (generated from testdata/schema.sql + data.sql) ###
+/data/
+
+### TestNG reports from running outside Maven ###
+/test-output/
+
 ### IntelliJ IDEA ###
 .idea/
 .idea/modules.xml

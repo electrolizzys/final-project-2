@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="database.mappers.CurrencyConversionMapper">
+
+    <resultMap id="CurrencyConversionResultMap" type="database.models.CurrencyConversionRecord">
+        <id property="id" column="id"/>
+        <result property="fromCurrency" column="from_currency"/>
+        <result property="toCurrency" column="to_currency"/>
+        <result property="amount" column="amount"/>
+    </resultMap>
+
+    <select id="selectAll" resultMap="CurrencyConversionResultMap">
+        SELECT id, from_currency, to_currency, amount
+        FROM currency_conversions
+        ORDER BY id
+    </select>
+
+</mapper>
